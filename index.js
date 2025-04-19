@@ -3,9 +3,12 @@ const express = require('express');
 const qrcode = require('qrcode-terminal');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
+const cors = require('cors')
 
 const app = express();
 const port = 3000;
+
+app.use(cors());
 
 // Middleware
 app.use(express.json());
@@ -17,10 +20,19 @@ const client = new Client({
 });
 
 // Display QR Code for First-time Login
-client.on('qr', (qr) => {
-    console.log('Scan the QR code below to log in:');
-    qrcode.generate(qr, { small: true });
+app.get('/start', async (req, res) => {
+    client.once('qr', (qr) => {
+        console.log('Scan the QR code below to log in:', qr);
+        qrcode.generate(qr, { small: true });
+        res.json({ qrCodeUrl: qr });
+    });
+
+    // Optionally, you can also ensure client is initialized here
+    if (!client.info) {
+        client.initialize();
+    }
 });
+
 
 // Confirm when Bot is Ready
 client.on('ready', () => {
